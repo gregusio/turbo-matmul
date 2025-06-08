@@ -20,7 +20,7 @@ This repository contains a Haskell implementation of a optimized matrix multipli
    ghc -O2 -threaded -eventlog -package=time -iapp -isrc app/Main.hs -o turbo-matmul
    ```
 
-Alternatively, you can use Cabal to build the project:
+    Alternatively, you can use Cabal to build the project:
    ```bash
    cabal build
    ```
