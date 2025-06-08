@@ -15,12 +15,12 @@ This repository contains a Haskell implementation of a optimized matrix multipli
    python input/generate_matrix.py
    ```
 
-3.1. Compile the project using ghc:
+3. Compile the project using ghc:
    ```bash
    ghc -O2 -threaded -eventlog -package=time -iapp -isrc app/Main.hs -o turbo-matmul
    ```
 
-3.2 Alternatively, you can use Cabal to build the project:
+Alternatively, you can use Cabal to build the project:
    ```bash
    cabal build
    ```
