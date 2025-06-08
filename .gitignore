@@ -1,1 +1,6 @@
 /dist-newstyle
+*.hi
+*.o
+*.exe
+/app/Main
+Main.eventlog
