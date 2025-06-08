@@ -15,19 +15,29 @@ This repository contains a Haskell implementation of a optimized matrix multipli
    python input/generate_matrix.py
    ```
 
-3. Compile the project using ghc:
+3.1. Compile the project using ghc:
    ```bash
-   ghc -O2 -threaded -eventlog -package=time -iapp -isrc app/Main.hs
+   ghc -O2 -threaded -eventlog -package=time -iapp -isrc app/Main.hs -o turbo-matmul
    ```
 
-4. Run the application:
+3.2 Alternatively, you can use Cabal to build the project:
    ```bash
-   app/Main
-   ```  
+   cabal build
+   ```
+
+4. Run the application
+   ```bash
+   ./turbo-matmul +RTS -N -l
+    ```
+    
+    or if you used Cabal:
+    ```bash
+    cabal run turbo-matmul -- +RTS -N -ls
+    ```
 
 5. To view a threadscope of the execution, you can use:
    ```bash
-   threadscope Main.eventlog
+   threadscope turbo-matmul.eventlog
    ```
 
 ## Features
