@@ -1,12 +1,7 @@
 module Matrix (
     Matrix(..),
-    extendToTwoPowerSquare,
-    divideMatrixToQuadrants,
-    addMatrices,
-    combineQuadrants,
-    multiplyMatrices,
-    fastMatrixMultiplication,
-    backToPreviousSize
+    simpleMultiply,
+    fastMultiply
 ) where
 
 
@@ -23,8 +18,8 @@ instance NFData Matrix where
     rnf (Matrix n m xs) = rnf n `seq` rnf m `seq` rnf xs 
 
 
-extendToTwoPowerSquare :: Matrix -> Matrix
-extendToTwoPowerSquare (Matrix n m matrix) =
+extendToThePowerOfTwo :: Matrix -> Matrix
+extendToThePowerOfTwo (Matrix n m matrix) =
     let size = 2 ^ (ceiling $ logBase 2 (fromIntegral $ max n m))
         padRow row = take size (row ++ repeat 0.0)
         paddedRows = map padRow matrix
@@ -39,8 +34,8 @@ backToPreviousSize originalN originalM (Matrix n m matrix) =
     in Matrix originalN originalM trimmedMatrix
 
 
-divideMatrixToQuadrants :: Matrix -> (Matrix, Matrix, Matrix, Matrix)
-divideMatrixToQuadrants (Matrix n m matrix) = 
+divideToQuadrants :: Matrix -> (Matrix, Matrix, Matrix, Matrix)
+divideToQuadrants (Matrix n m matrix) = 
     let halfN = n `div` 2
         halfM = m `div` 2
         topLeft = take halfN $ map (take halfM) matrix
@@ -50,13 +45,12 @@ divideMatrixToQuadrants (Matrix n m matrix) =
     in (Matrix halfN halfM topLeft, Matrix halfN halfM topRight, Matrix halfN halfM bottomLeft, Matrix halfN halfM bottomRight)
 
 
-addMatrices :: Matrix -> Matrix -> Matrix
-addMatrices (Matrix n1 m1 a) (Matrix n2 m2 b) 
+add :: Matrix -> Matrix -> Matrix
+add (Matrix n1 m1 a) (Matrix n2 m2 b) 
     | n1 /= n2 || m1 /= m2 = error "Matrices must have the same dimensions for addition"
     | otherwise = 
         if n1 == 0 || m1 == 0 then Matrix n1 m1 []
         else Matrix n1 m1 (zipWith (zipWith (+)) a b)
-
 
 
 combineQuadrants :: Matrix -> Matrix -> Matrix -> Matrix -> Matrix
@@ -66,8 +60,8 @@ combineQuadrants (Matrix _ _ c11) (Matrix _ _ c12) (Matrix _ _ c21) (Matrix _ _ 
     in Matrix (length top) (length (head top)) (top ++ bottom)
 
 
-multiplyMatrices :: Matrix -> Matrix -> Matrix
-multiplyMatrices (Matrix n1 m1 a) (Matrix n2 m2 b)
+simpleMultiply :: Matrix -> Matrix -> Matrix
+simpleMultiply (Matrix n1 m1 a) (Matrix n2 m2 b)
     | m1 /= n2 = error "Incompatible matrix dimensions"
     | otherwise = Matrix n1 m2 (multiplyMatrices' a b)
     where
@@ -75,18 +69,18 @@ multiplyMatrices (Matrix n1 m1 a) (Matrix n2 m2 b)
         multiplyMatrices' a b = [[sum $ zipWith (*) ar bc | bc <- transpose b] | ar <- a]
 
 
-fastMatrixMultiplication :: Matrix -> Matrix -> Matrix
-fastMatrixMultiplication (Matrix n1 m1 a) (Matrix n2 m2 b)
+fastMultiply :: Matrix -> Matrix -> Matrix
+fastMultiply (Matrix n1 m1 a) (Matrix n2 m2 b)
     | m1 /= n2 = error "Incompatible matrix dimensions"
     | otherwise = runEval $ do
-        let (tl1, tr1, bl1, br1) = divideMatrixToQuadrants (Matrix n1 m1 a)
-            (tl2, tr2, bl2, br2) = divideMatrixToQuadrants (Matrix n2 m2 b)
-        c11 <- rpar (force(addMatrices (multiplyMatrices tl1 tl2) (multiplyMatrices tr1 bl2)))
-        c12 <- rpar (force(addMatrices (multiplyMatrices tl1 tr2) (multiplyMatrices tr1 br2)))
-        c21 <- rpar (force(addMatrices (multiplyMatrices bl1 tl2) (multiplyMatrices br1 bl2)))
-        c22 <- rpar (force(addMatrices (multiplyMatrices bl1 tr2) (multiplyMatrices br1 br2)))
+        let (tl1, tr1, bl1, br1) = divideToQuadrants (extendToThePowerOfTwo (Matrix n1 m1 a))
+            (tl2, tr2, bl2, br2) = divideToQuadrants (extendToThePowerOfTwo (Matrix n2 m2 b))
+        c11 <- rpar (force(add (simpleMultiply tl1 tl2) (simpleMultiply tr1 bl2)))
+        c12 <- rpar (force(add (simpleMultiply tl1 tr2) (simpleMultiply tr1 br2)))
+        c21 <- rpar (force(add (simpleMultiply bl1 tl2) (simpleMultiply br1 bl2)))
+        c22 <- rpar (force(add (simpleMultiply bl1 tr2) (simpleMultiply br1 br2)))
         rseq c11
         rseq c12
         rseq c21
         rseq c22
-        return (combineQuadrants c11 c12 c21 c22)
+        return $ backToPreviousSize n1 m2 (combineQuadrants c11 c12 c21 c22)
