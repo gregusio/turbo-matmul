@@ -17,7 +17,7 @@ This repository contains a Haskell implementation of a optimized matrix multipli
 
 3. Compile the project using ghc:
    ```bash
-   ghc -O2 -threaded -eventlog -package=time -iapp -isrc app/Main.hs -o turbo-matmul
+   ghc -O2 -threaded -eventlog -package=time -package=matrix -iapp -isrc app/Main.hs -o turbo-matmul
    ```
 
     Alternatively, you can use Cabal to build the project:
